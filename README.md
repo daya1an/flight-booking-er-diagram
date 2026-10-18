@@ -1,3 +1,297 @@
+Here is a **simplified production-friendly ER model** for a Flight Booking Application. It keeps the essential entities—airports, flights, aircraft, passengers, bookings, seats, payments, and baggage—while avoiding separate schedule/instance, fare-rule, audit, and integration tables.
+
+## Simplified ER diagram
+
+```mermaid
+erDiagram
+    AIRLINE ||--o{ AIRCRAFT : owns
+    AIRLINE ||--o{ FLIGHT : operates
+
+    AIRCRAFT ||--o{ SEAT : contains
+
+    AIRPORT ||--o{ FLIGHT : departure_airport
+    AIRPORT ||--o{ FLIGHT : arrival_airport
+
+    FLIGHT ||--o{ BOOKING : booked_for
+    FLIGHT ||--o{ SEAT_ASSIGNMENT : has
+
+    CUSTOMER ||--o{ BOOKING : creates
+    BOOKING ||--o{ PASSENGER : includes
+    BOOKING ||--o{ PAYMENT : paid_by
+    BOOKING ||--o{ REFUND : refunded_by
+
+    PASSENGER ||--o{ SEAT_ASSIGNMENT : assigned
+    PASSENGER ||--o{ BAGGAGE : checks_in
+```
+
+## Entities and fields
+
+### Airline
+
+Stores airline companies.
+
+```text
+AIRLINE
+- airline_id (PK)
+- airline_code (UK)      -- AI, 6E, UK
+- airline_name
+- country
+- status
+```
+
+Example: `AI` = Air India, `6E` = IndiGo.
+
+### Airport
+
+Stores airports.
+
+```text
+AIRPORT
+- airport_id (PK)
+- iata_code (UK)         -- MAA, DEL, BLR
+- airport_name
+- city
+- country
+- timezone
+```
+
+Example: `MAA` = Chennai International Airport, `DEL` = Delhi Airport.
+
+### Aircraft
+
+Stores individual aircraft.
+
+```text
+AIRCRAFT
+- aircraft_id (PK)
+- airline_id (FK)
+- aircraft_model         -- A320neo, B787-9
+- registration_number UK -- VT-EXA
+- total_seats
+- status
+```
+
+Example: Air India aircraft `VT-EXA`, an Airbus A320neo with 180 seats.
+
+### Seat
+
+Stores physical seats on an aircraft.
+
+```text
+SEAT
+- seat_id (PK)
+- aircraft_id (FK)
+- seat_number            -- 12A, 12B, 12C
+- cabin_class            -- ECONOMY, BUSINESS
+- seat_type              -- WINDOW, AISLE, MIDDLE
+- is_available
+```
+
+Example: Seat `12A`, Economy, Window.
+
+### Flight
+
+Stores a scheduled flight on a specific date.
+
+```text
+FLIGHT
+- flight_id (PK)
+- airline_id (FK)
+- flight_number          -- AI202
+- flight_date            -- 2026-10-18
+- origin_airport_id (FK) -- MAA
+- destination_airport_id (FK) -- DEL
+- departure_time
+- arrival_time
+- aircraft_id (FK)
+- status                 -- SCHEDULED, DELAYED, CANCELLED, COMPLETED
+- base_fare
+- currency
+```
+
+Example: AI202 from Chennai to Delhi on 18-Oct-2026.
+
+### Customer
+
+Stores the person or organization making the booking.
+
+```text
+CUSTOMER
+- customer_id (PK)
+- email UK
+- phone
+- first_name
+- last_name
+- date_of_birth
+- status
+```
+
+Example: A customer books tickets for themselves and family members.
+
+### Booking
+
+Stores one reservation, usually identified by a PNR.
+
+```text
+BOOKING
+- booking_id (PK)
+- pnr UK                 -- ABC123
+- customer_id (FK)
+- flight_id (FK)
+- booking_status         -- PENDING, CONFIRMED, CANCELLED
+- total_amount
+- currency
+- booked_at
+- cancelled_at
+```
+
+Example: PNR `ABC123`, confirmed booking for AI202.
+
+### Passenger
+
+Stores each traveller included in a booking.
+
+```text
+PASSENGER
+- passenger_id (PK)
+- booking_id (FK)
+- first_name
+- last_name
+- date_of_birth
+- passenger_type         -- ADULT, CHILD, INFANT
+- passport_number_encrypted
+- nationality
+```
+
+Example: Two adults and one child can be part of the same booking.
+
+### Seat assignment
+
+Links a passenger to a seat for a flight.
+
+```text
+SEAT_ASSIGNMENT
+- seat_assignment_id (PK)
+- flight_id (FK)
+- passenger_id (FK)
+- seat_id (FK)
+- assignment_fee
+- assigned_at
+```
+
+Example: Passenger `PAX45678` assigned seat `12A` on AI202.
+
+### Payment
+
+Stores money received for a booking.
+
+```text
+PAYMENT
+- payment_id (PK)
+- booking_id (FK)
+- payment_reference UK
+- amount
+- currency
+- payment_method         -- CARD, UPI, NETBANKING, WALLET
+- payment_status         -- INITIATED, SUCCESS, FAILED, REFUNDED
+- paid_at
+```
+
+Example: ₹18,500 paid by UPI for a family booking.
+
+### Refund
+
+Stores refunds against a booking.
+
+```text
+REFUND
+- refund_id (PK)
+- booking_id (FK)
+- payment_id (FK)
+- refund_amount
+- refund_reason
+- refund_status          -- REQUESTED, PROCESSED, REJECTED
+- refunded_at
+```
+
+Example: ₹4,000 refunded after cancelling one passenger’s ticket.
+
+### Baggage
+
+Stores checked-in baggage for a passenger.
+
+```text
+BAGGAGE
+- baggage_id (PK)
+- passenger_id (FK)
+- baggage_tag_number UK
+- weight_kg
+- extra_fee
+- status                 -- CHECKED_IN, LOADED, DELIVERED, LOST
+```
+
+Example: One 27 kg bag with ₹2,000 excess-baggage fee.
+
+## Relationship summary
+
+| Relationship | Cardinality | Example |
+|---|---:|---|
+| Airline → Aircraft | 1:N | Air India owns many aircraft |
+| Airline → Flight | 1:N | Air India operates AI202, AI674 |
+| Aircraft → Seat | 1:N | One aircraft has 180 seats |
+| Airport → Flight | 1:N as origin and destination | MAA is origin for AI202 and destination for AI203 |
+| Flight → Booking | 1:N | AI202 has many bookings |
+| Customer → Booking | 1:N | One customer can make many bookings |
+| Booking → Passenger | 1:N | One booking can include several passengers |
+| Booking → Payment | 1:N | Booking may have card and wallet payments |
+| Booking → Refund | 1:N | Booking may have partial refunds |
+| Passenger → Seat assignment | 1:N | Passenger may be assigned seats on different flights |
+| Passenger → Baggage | 1:N | Passenger may check in multiple bags |
+
+## Key rules
+
+- A booking belongs to one customer and one flight in this simplified model.
+- A booking can contain multiple passengers.
+- Each passenger can have one seat assignment per flight.
+- A seat can be assigned to only one passenger on a given flight.
+- A payment must belong to a booking.
+- A refund should reference the original payment.
+- Baggage always belongs to a passenger.
+- Cancelled bookings and flights should be marked with a status, not deleted.
+
+## Sample flow
+
+**Scenario:** A customer books two Economy seats on AI202 from Chennai to Delhi.
+
+1. Customer is created or retrieved.
+2. Flight AI202 is found for 18-Oct-2026.
+3. Booking `ABC123` is created.
+4. Two passengers are added to the booking.
+5. Seats `12A` and `12B` are assigned.
+6. Payment of ₹18,500 is recorded.
+7. Booking status becomes `CONFIRMED`.
+8. Each passenger may later check in baggage.
+
+## When to use this simpler model
+
+Use this model for:
+
+- A learning project.
+- A minimum viable product (**MVP**).
+- A small airline or charter-booking application.
+- A demo where one booking covers one flight.
+
+Use the comprehensive model when you need:
+
+- Multi-city and round-trip itineraries.
+- Separate flight schedules and actual flight instances.
+- Fare rules, taxes, and ticket-level pricing.
+- Cabin-specific inventory and complex seat maps.
+- Check-in, boarding passes, loyalty points, and detailed baggage tracking.
+- SAP, payment-gateway, and partner-system integrations.
+
+# Production-oriented ER model
+
 Below is a production-oriented ER model for a **Flight Booking Application**. It separates reusable schedule/master data from date-specific operations, which is essential for real airline systems: a flight schedule such as “AI202, Chennai to Delhi, daily” is different from the actual AI202 service on 18-Oct-2026. [databasesample](https://databasesample.com/database/airline-reservation-system-database)
 
 ## Design principles
