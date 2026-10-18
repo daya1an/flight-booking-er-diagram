@@ -1,6 +1,6 @@
-Here is a **simplified production-friendly ER model** for a Flight Booking Application. It keeps the essential entities—airports, flights, aircraft, passengers, bookings, seats, payments, and baggage—while avoiding separate schedule/instance, fare-rule, audit, and integration tables.
+# Simplified ER diagram
 
-## Simplified ER diagram
+Here is a **simplified production-friendly ER model** for a Flight Booking Application. It keeps the essential entities—airports, flights, aircraft, passengers, bookings, seats, payments, and baggage—while avoiding separate schedule/instance, fare-rule, audit, and integration tables.
 
 ```mermaid
 erDiagram
